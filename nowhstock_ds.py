@@ -159,9 +159,9 @@ def get_data_freshness() -> Dict[str, str]:
     freshness = {'inventory': 'N/A', 'grn': 'N/A', 'sales': 'N/A'}
     
     try:
-        # Get Inventory and GRN dates from grndetails database
+        # Get Inventory and GRN dates from salesdata database
         try:
-            with get_db_connection('grndetails') as conn:
+            with get_db_connection('salesdata') as conn:
                 # Get inventory date (from inventory_master table)
                 query_inv = 'SELECT MAX(shopgrn_dt) as latest_date FROM inventory_master WHERE shopgrn_dt IS NOT NULL'
                 result = pd.read_sql(query_inv, conn)
@@ -586,7 +586,7 @@ def load_inventory_data(group: str, subgroup: str, product: str, shop: str) -> p
 def load_last_grn_dates() -> pd.DataFrame:
     """Load last GRN date per item-shop from materialized view (cached 15 min)"""
     try:
-        with get_db_connection('grndetails') as conn:
+        with get_db_connection('salesdata') as conn:
             query = """
                 SELECT 
                     item_code,
@@ -608,7 +608,7 @@ def load_last_grn_dates() -> pd.DataFrame:
         logger.warning(f"⚠️ Using fallback: will calculate GRN dates from sup_shop_grn table instead")
         # Fallback: query the base table directly
         try:
-            with get_db_connection('grndetails') as conn:
+            with get_db_connection('salesdata') as conn:
                 query = """
                     SELECT 
                         TRIM(UPPER("ITEM_CODE")) AS ITEM_CODE,
@@ -628,7 +628,7 @@ def load_last_grn_dates() -> pd.DataFrame:
 def calculate_grn_sales() -> pd.DataFrame:
     """Calculate sales since last GRN date"""
     try:
-        with get_db_connection('grndetails') as conn_grn, get_db_connection('salesdata') as conn_sales:
+        with get_db_connection('salesdata') as conn_grn, get_db_connection('salesdata') as conn_sales:
             # Load GRN dates
             grn_df = pd.read_sql("""
                 SELECT 
